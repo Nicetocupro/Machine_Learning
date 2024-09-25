@@ -107,4 +107,12 @@ class LinearRegression:
         self.testLabel = testLabel
         y_predict = np.dot(self.testSet, self.w) + self.b
         MSE = np.power((y_predict - self.testLabel), 2).sum() / len(testLabel)  # 计算均方误差
-        return MSE
+        RMSE = np.sqrt(MSE)  # 计算均方根误差
+        MAE = np.abs(y_predict - self.testLabel).sum() / len(testLabel)  # 计算平均绝对误差
+
+        # 输出预测结果
+        print("真实值:", self.testLabel)
+        print("预测值:", y_predict)
+        print("均方误差 (MSE):", MSE)
+        print("均方根误差 (RMSE):", RMSE)
+        print("平均绝对误差 (MAE):", MAE)
