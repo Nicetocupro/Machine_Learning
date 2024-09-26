@@ -11,7 +11,6 @@ class LinearRegression:
         self.trainSet = 0  # 训练集特征
         self.trainLabel = 0  # 训练集标签
         self.testSet = 0  # 测试集特征
-        self.testLabel = 0  # 测试集标签
         self.learning_rate = None  # 学习率
         self.n_iters = None  # 实际迭代次数
         self.lossList = []  # 梯度下降每轮迭代的误差列表
@@ -61,40 +60,58 @@ class LinearRegression:
         # 求w和b
         EX = np.linalg.inv(np.dot(X2.T, X2))
         what = np.dot(np.dot(EX, X2.T), y)
+
+        print("X2 shape:", X2.shape)
+        print("what shape:", what.shape)
+        print("y shape:", y.shape)
+
         self.w = what[:-1]
         self.b = what[-1]
-        self.sqrLoss = np.power((y - np.dot(X2, what).flatten()), 2).sum()
+        self.sqrLoss = np.power((y - np.dot(X2, what)), 2).sum()
         return
 
     def __train_gradient(self, learning_rate, n_iters, minloss=1.0e-6):
+        # 确保 trainLabel 是二维的
+        if self.trainLabel.ndim == 1:
+            self.trainLabel = np.expand_dims(self.trainLabel, axis=1)
         n_samples, n_features = self.trainSet.shape
+        _, n_outputs = self.trainLabel.shape
         X = self.trainSet
         y = self.trainLabel
-        # 初始化迭代次数为0，初始化w0, b0都为1，初始化误差平方和以及迭代误差之差
         n = 0
-        w = np.ones(n_features)
-        b = 1
-        sqrLoss0 = np.power((y - np.dot(X, w).flatten() - b), 2).sum()
+        w = np.ones((n_features, n_outputs))
+        b = np.zeros((1, n_outputs))  # 初始化为0，并且形状调整为 (1, n_outputs)
+
+        print("X shape:", X.shape)
+        print("w shape:", w.shape)
+        print("y shape:", y.shape)
+
+        # 计算初始损失
+        ypredict = np.dot(X, w) + b  # 直接相加，b会广播成 (n_samples, n_outputs)
+        sqrLoss0 = np.power((y - ypredict), 2).sum()
         self.lossList.append(sqrLoss0)
         deltaLoss = np.inf
 
         while (n < n_iters) and (sqrLoss0 > minloss) and (abs(deltaLoss) > minloss):
-            # 求w和b的梯度
+            # 计算预测值
             ypredict = np.dot(X, w) + b
-            gradient_w = -np.sum((y - ypredict).reshape(-1, 1) * X, axis=0) / n_samples
-            gradient_b = -np.sum(y - ypredict) / n_samples
 
-            # 更新w和b的值
+            # 计算梯度
+            gradient_w = -np.dot(X.T, (y - ypredict)) / n_samples
+            gradient_b = -np.sum(y - ypredict, axis=0, keepdims=True) / n_samples
+
+            # 更新权重和偏置
             w = w - learning_rate * gradient_w
             b = b - learning_rate * gradient_b
 
-            # 求更新后的误差和更新前后的误差之差
-            sqrLoss1 = np.power((y - np.dot(X, w).flatten() - b), 2).sum()
+            # 计算新的损失
+            sqrLoss1 = np.power((y - np.dot(X, w) - b), 2).sum()
             deltaLoss = sqrLoss0 - sqrLoss1
             sqrLoss0 = sqrLoss1
             self.lossList.append(sqrLoss0)
             n += 1
             print("第{}次迭代，损失平方和为{}，损失前后差为{}".format(n, sqrLoss0, deltaLoss))
+
         self.w = w
         self.b = b
         self.sqrLoss = sqrLoss0
@@ -102,17 +119,7 @@ class LinearRegression:
         self.n_iters = n + 1
         return
 
-    def predict(self, testSet, testLabel):
+    def predict(self, testSet):
         self.testSet = testSet
-        self.testLabel = testLabel
         y_predict = np.dot(self.testSet, self.w) + self.b
-        MSE = np.power((y_predict - self.testLabel), 2).sum() / len(testLabel)  # 计算均方误差
-        RMSE = np.sqrt(MSE)  # 计算均方根误差
-        MAE = np.abs(y_predict - self.testLabel).sum() / len(testLabel)  # 计算平均绝对误差
-
-        # 输出预测结果
-        print("真实值:", self.testLabel)
-        print("预测值:", y_predict)
-        print("均方误差 (MSE):", MSE)
-        print("均方根误差 (RMSE):", RMSE)
-        print("平均绝对误差 (MAE):", MAE)
+        return y_predict
