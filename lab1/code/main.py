@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA  # 新增
 import random
 import folium
 import models.LinearRegression as lr
@@ -21,6 +22,7 @@ class TyphoonDataProcessor:
         self.y_val = None
         self.model = lr.LinearRegression()
         self.scale = StandardScaler()
+        self.pca = PCA(n_components=25)  # 新增PCA实例
 
     def load_data(self):
         # 读取CSV数据，并调整经纬度数据的单位
@@ -93,6 +95,11 @@ class TyphoonDataProcessor:
         # 对验证集特征应用相同的标准化处理，仅使用之前计算的标准化参数进行转换
         self.x_val = self.scale.transform(self.x_val)
 
+        # 进行PCA降维处理
+        self.x_train = self.pca.fit_transform(self.x_train)
+        self.x_val = self.pca.transform(self.x_val)
+        print("Explained variance ratio (train set):", self.pca.explained_variance_ratio_)
+
     def train_model(self):
         # 使用指定的参数训练模型
         self.model.train(self.x_train, self.y_train, method="matrix", learning_rate=0.1, n_iters=5000)
@@ -112,6 +119,8 @@ class TyphoonDataProcessor:
         y_test = self.test_typhoons[:, 2, 5:]
         # 对测试集的输入进行缩放
         x_test = self.scale.transform(x_test)
+        # 对测试集进行PCA降维
+        x_test = self.pca.transform(x_test)
         # 预测测试集的结果
         lr_pred = self.model.predict(x_test)
         # 计算测试集的均方根误差并给出评分
@@ -128,13 +137,15 @@ class TyphoonDataProcessor:
         y_test = self.test_typhoons[:, 2, 5:]
         # 对测试集的数据进行标准化处理
         x_test = self.scale.transform(x_test)
+        # 对测试集数据进行PCA降维
+        x_test = self.pca.transform(x_test)
         # 随机选择一个样本的索引
         idx = random.randint(0, len(x_test))
         # 将选中的样本进行反标准化处理，并调整形状以便后续处理
-        x_sample = self.scale.inverse_transform(x_test[idx].reshape(1, -1)).reshape(2, -1)
+        x_sample = self.scale.inverse_transform(self.pca.inverse_transform(x_test[idx].reshape(1, -1))).reshape(2, -1)
         # 从测试集中取出选中样本的实际值
         y_sample = y_test[idx]
-         # 使用模型对所有测试样本进行预测，并取出选中样本的预测结果
+        # 使用模型对所有测试样本进行预测，并取出选中样本的预测结果
         lr_pred_sample = np.array(self.model.predict(x_test)[idx])
         # 创建一个地图对象，初始位置设置为选中样本的第一个经纬度值
         m = folium.Map(location=[x_sample[0][5], x_sample[0][6]], zoom_start=5, width=600, height=600)
