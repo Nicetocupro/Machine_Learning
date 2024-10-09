@@ -37,12 +37,10 @@ class RidgeRegression:
         self.b = what[-1]
 
         # 计算平方损失
-        self.sqrLoss = np.power((y - np.dot(X2, what).flatten()), 2).sum()
+        self.sqrLoss = np.power((y - np.dot(X2, what)), 2).sum()
         return
 
-    def predict(self, testSet, testLabel):
+    def predict(self, testSet):
         self.testSet = testSet
-        self.testLabel = testLabel
         y_predict = np.dot(self.testSet, self.w) + self.b
-        MSE = np.power((y_predict - self.testLabel), 2).sum() / len(testLabel)  # 计算均方误差
-        return MSE
+        return y_predict

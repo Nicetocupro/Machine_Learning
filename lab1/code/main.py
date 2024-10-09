@@ -6,10 +6,14 @@ from sklearn.preprocessing import StandardScaler
 import random
 import folium
 import models.LinearRegression as lr
+import models.RidgeRegression as rr
+import models.LassoRegression as ls
+import models.GBDT as gbdt
 from sklearn.metrics import mean_squared_error
+import argparse
 
 class TyphoonDataProcessor:
-    def __init__(self, file_path):
+    def __init__(self, file_path, model_type="Linear"):
         # 初始化类
         self.file_path = file_path
         self.data = None
@@ -19,8 +23,18 @@ class TyphoonDataProcessor:
         self.x_val = None
         self.y_train = None
         self.y_val = None
-        self.model = lr.LinearRegression()
         self.scale = StandardScaler()
+        
+        if model_type == "linear":
+            self.model = lr.LinearRegression()
+        elif model_type == "ridge":
+            self.model = rr.RidgeRegression()
+        elif model_type == "lasso":
+            self.model = ls.LassoRegression()
+        elif model_type == "GBDT":
+            self.model = gbdt.GBDT()
+        else:
+            raise ValueError("Model type not found!")
 
     def load_data(self):
         # 读取CSV数据，并调整经纬度数据的单位
@@ -78,6 +92,9 @@ class TyphoonDataProcessor:
         x = self.dataset[:, :2, :]
         # 从数据集中提取标签，使用切片操作获取特定列以后的所有部分
         y = self.dataset[:, 2, 5:]
+        #如果是GBDT模型，将标签转换为一维数组
+        if isinstance(self.model, gbdt.GBDT):
+            y = y[:, 0]
         # 使用train_test_split函数将数据分为训练集和验证集，验证集占30%
         self.x_train, self.x_val, self.y_train, self.y_val = train_test_split(x, y, test_size=0.3, random_state=42, shuffle=True)
         # 打印训练集和验证集的形状，以便检查数据划分情况
@@ -95,7 +112,15 @@ class TyphoonDataProcessor:
 
     def train_model(self):
         # 使用指定的参数训练模型
-        self.model.train(self.x_train, self.y_train, method="matrix", learning_rate=0.1, n_iters=5000)
+        if isinstance(self.model, lr.LinearRegression):
+            self.model.train(self.x_train, self.y_train, method="matrix", learning_rate=0.1, n_iters=5000)
+        elif isinstance(self.model, rr.RidgeRegression):
+            self.model.train(self.x_train, self.y_train, lambdas=0.2)
+        elif isinstance(self.model, ls.LassoRegression):
+            self.model.train(self.x_train, self.y_train, method='coordinate_descent', n_iters=5000, lambdas=0.01)
+        elif isinstance(self.model, gbdt.GBDT):
+            self.model.train(self.x_train, self.y_train)
+        
         pred = self.model.predict(self.x_train)
         # 计算并存储均方根误差
         rmse = mean_squared_error(pred, self.y_train, squared=False)
@@ -114,6 +139,9 @@ class TyphoonDataProcessor:
         x_test = self.scale.transform(x_test)
         # 预测测试集的结果
         lr_pred = self.model.predict(x_test)
+        # 如果是GBDT模型，将标签转换为一维数组
+        if isinstance(self.model, gbdt.GBDT):
+            y_test = y_test[:, 0]
         # 计算测试集的均方根误差并给出评分
         rmse = mean_squared_error(lr_pred, y_test, squared=False)
         print("Test Score:", rmse)
@@ -136,6 +164,11 @@ class TyphoonDataProcessor:
         y_sample = y_test[idx]
          # 使用模型对所有测试样本进行预测，并取出选中样本的预测结果
         lr_pred_sample = np.array(self.model.predict(x_test)[idx])
+        
+                # 如果是GBDT模型，处理单一预测值
+
+        if isinstance(self.model, gbdt.GBDT):
+            lr_pred_sample = np.array([lr_pred_sample, lr_pred_sample, lr_pred_sample, lr_pred_sample, lr_pred_sample, lr_pred_sample, lr_pred_sample, lr_pred_sample])
         # 创建一个地图对象，初始位置设置为选中样本的第一个经纬度值
         m = folium.Map(location=[x_sample[0][5], x_sample[0][6]], zoom_start=5, width=600, height=600)
         # 在地图上绘制两个起始位置、一个实际位置和一个预测位置的圆圈
@@ -147,7 +180,12 @@ class TyphoonDataProcessor:
 
 # Usage
 def main():
-    processor = TyphoonDataProcessor("../data/archive/typhoon_data.csv")
+    parser = argparse.ArgumentParser(description="Typhoon Data Processor")
+    parser.add_argument('--model', type=str, default='linear', choices=['linear', 'ridge', 'lasso', 'GBDT'],
+                        help="Choose the model type: 'linear', 'ridge','GBDT' or 'lasso'")
+    args = parser.parse_args()
+
+    processor = TyphoonDataProcessor("../data/archive/typhoon_data.csv", model_type=args.model)
     processor.load_data()
     processor.split_data()
     processor.train_model()
