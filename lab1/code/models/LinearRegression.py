@@ -113,7 +113,6 @@
 #         MSE = np.power((y_predict - self.testLabel), 2).sum() / len(testLabel)  # 计算均方误差
 #         return MSE
 import numpy as np
-from scipy import optimize, sparse
 from sklearn.utils.validation import check_X_y, check_array, _check_sample_weight
 
 class LinearRegression:
