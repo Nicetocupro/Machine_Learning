@@ -22,16 +22,17 @@ class RandomForest:
         rs = np.random.RandomState(self.random_state)
         
         self.trees = []
+        
         for _ in range(self.n_estimators):
-            # 决策树回归器
             dt = DecisionTreeRegressor(
-                max_features="sqrt", 
-                random_state=rs.randint(np.iinfo(np.int32).max)
+                max_features="sqrt",
+                random_state=self.random_state  # 使用相同的随机状态，避免每棵树不同
             )
-            # 使用 bootstrap 采样进行训练
             sample_indices = rs.choice(n_samples, n_samples, replace=True)
             dt.fit(X[sample_indices], y[sample_indices])
             self.trees.append(dt)
+
+
 
     def predict(self, X):
         # 预测结果初始化为与输出形状一致的零矩阵
