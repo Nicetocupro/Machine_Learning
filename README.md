@@ -26,5 +26,11 @@ This repository contains three lab experiments focused on machine learning techn
 2. Navigate to the specific lab directory:
    ```bash
    cd Lab1  # or Lab2 / Lab3
+   For lab1,there is diffrent models
+   Usage
+   To run the script with different models, use the following commands:
+      python main.py --model linear
+      python main.py --model ridge
+      python main.py --model lasso
    ```
 3. Run the corresponding code with your preferred Python environment.

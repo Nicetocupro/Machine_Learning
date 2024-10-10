@@ -47,7 +47,7 @@ class SimpleDecisionTreeRegressor:
         
         return bestsplit
 
-    def calculatemse(self, lefty, righty):
+    def calculatemse(self, lefty, righty):#计算均方误差
         leftmse = np.var(lefty) * len(lefty)
         rightmse = np.var(righty) * len(righty)
         return (leftmse + rightmse) / (len(lefty) + len(righty))
