@@ -1,0 +1,44 @@
+import numpy as np
+from sklearn.tree import DecisionTreeRegressor
+
+class RandomForest:
+    def __init__(self, n_estimators=100, random_state=0):
+        self.n_estimators = n_estimators
+        self.random_state = random_state
+        self.trees = []
+
+    def _validate_data(self, X, y):
+        # 数据预处理
+        if isinstance(X, list):
+            X = np.array(X)
+        if isinstance(y, list):
+            y = np.array(y)
+        return X, y
+
+    def train(self, X, y):
+        # 拟合模型
+        X, y = self._validate_data(X, y)
+        n_samples = X.shape[0]
+        rs = np.random.RandomState(self.random_state)
+        
+        self.trees = []
+        for _ in range(self.n_estimators):
+            # 决策树回归器
+            dt = DecisionTreeRegressor(
+                max_features="sqrt", 
+                random_state=rs.randint(np.iinfo(np.int32).max)
+            )
+            # 使用 bootstrap 采样进行训练
+            sample_indices = rs.choice(n_samples, n_samples, replace=True)
+            dt.fit(X[sample_indices], y[sample_indices])
+            self.trees.append(dt)
+
+    def predict(self, X):
+        # 预测结果初始化为与输出形状一致的零矩阵
+        predictions = np.zeros((X.shape[0], self.trees[0].predict(X).shape[1]))
+        for tree in self.trees:
+            predictions += tree.predict(X)
+        # 对所有树的预测结果取平均
+        predictions /= self.n_estimators
+        return predictions
+

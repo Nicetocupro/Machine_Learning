@@ -3,10 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA  # 新增
+from sklearn.decomposition import PCA
 import random
 import folium
-import models.LinearRegression as lr
+import models.RidgeRegression as rr  # 使用岭回归
+import models.RandomForest as rf # 使用随机森林
 from sklearn.metrics import mean_squared_error
 
 class TyphoonDataProcessor:
@@ -20,9 +21,10 @@ class TyphoonDataProcessor:
         self.x_val = None
         self.y_train = None
         self.y_val = None
-        self.model = lr.LinearRegression()
+        self.model = rf.RandomForest(n_estimators=100, random_state=0)  # 替换成随机森林模型
         self.scale = StandardScaler()
-        self.pca = PCA(n_components=25)  # 新增PCA实例
+        self.pca = PCA(n_components=26)  # PCA维数设置为n_components
+
 
     def load_data(self):
         # 读取CSV数据，并调整经纬度数据的单位
@@ -101,8 +103,8 @@ class TyphoonDataProcessor:
         print("Explained variance ratio (train set):", self.pca.explained_variance_ratio_)
 
     def train_model(self):
-        # 使用指定的参数训练模型
-        self.model.train(self.x_train, self.y_train, method="matrix", learning_rate=0.1, n_iters=5000)
+        # 使用随机森林模型进行训练
+        self.model.train(self.x_train, self.y_train)  # 这里无需传入 lambdas 参数
         pred = self.model.predict(self.x_train)
         # 计算并存储均方根误差
         rmse = mean_squared_error(pred, self.y_train, squared=False)
@@ -140,7 +142,7 @@ class TyphoonDataProcessor:
         # 对测试集数据进行PCA降维
         x_test = self.pca.transform(x_test)
         # 随机选择一个样本的索引
-        idx = random.randint(0, len(x_test))
+        idx = random.randint(0, len(x_test) - 1)
         # 将选中的样本进行反标准化处理，并调整形状以便后续处理
         x_sample = self.scale.inverse_transform(self.pca.inverse_transform(x_test[idx].reshape(1, -1))).reshape(2, -1)
         # 从测试集中取出选中样本的实际值
@@ -155,6 +157,7 @@ class TyphoonDataProcessor:
         folium.Circle(location=[y_sample[0], y_sample[1]], radius=y_sample[-2] * 1852, fill=True, color="purple", fill_color="orange").add_to(m)
         folium.Circle(location=[lr_pred_sample[0], lr_pred_sample[1]], radius=lr_pred_sample[-2] * 1852, fill=True, color="blue", fill_color="red").add_to(m)
         return m
+
 
 # Usage
 def main():
