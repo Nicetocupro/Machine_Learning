@@ -27,7 +27,7 @@ class LassoRegression:
         if train_X.ndim < 2:
             raise ValueError("X must be 2D array-like!")
         self.trainSet = train_X
-        self.trainLabel = np.atleast_2d(train_y)
+        self.trainLabel = np.atleast_2d(train_y).T  # 确保 trainLabel 是二维列向量
         self.n_iters = n_iters
         self.tol = tol
         self.lambdas = lambdas
@@ -39,7 +39,8 @@ class LassoRegression:
         else:
             raise ValueError("Unknown method: choose 'coordinate_descent' or 'least_angle_regression'.")
 
-    # 坐标下降法
+        # 坐标下降法
+
     def coordinate_descent(self):
         def down(X, y, w, index):
             """
@@ -56,6 +57,9 @@ class LassoRegression:
 
                 aa = aa + a * a
                 ab = ab + a * b
+
+                if aa == 0:
+                    return 0
 
             # 接下来就要讨论w[index]的正负，然后进行分类讨论
             '''

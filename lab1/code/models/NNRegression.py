@@ -37,16 +37,21 @@ class NeuralNetwork:
             torch.nn.BatchNorm1d(32),
             torch.nn.ReLU(),
 
-            torch.nn.Linear(32, 8)
+            torch.nn.Linear(32, 1)
         ).to(self.device)
 
     def train(self, train_x, train_y, learning_rate=0.001, n_iters=200, batch_size=64):
+        # 检查 train_x 和 train_y 的样本数量是否一致
+        if train_x.shape[0] != train_y.shape[0]:
+            raise ValueError("train_x and train_y must have the same number of samples.")
+
         # 标准化输入特征
-        train_x_flat = train_x.reshape(-1, 26)
+        train_x_flat = train_x.reshape(train_x.shape[0], -1)
         train_x_scaled = self.scaler.fit_transform(train_x_flat)
 
         # 标准化目标值
-        train_y_scaled = self.y_scaler.fit_transform(train_y)
+        train_y_reshaped = train_y.reshape(train_y.shape[0], -1)  # 将 train_y 进行 reshape，使其与模型输出匹配
+        train_y_scaled = self.y_scaler.fit_transform(train_y_reshaped)
 
         # 将数据转换为张量并移动到设备
         x_tensor = torch.tensor(train_x_scaled, dtype=torch.float32).to(self.device)
@@ -76,7 +81,7 @@ class NeuralNetwork:
 
     def predict(self, x):
         """Predict the output for given input"""
-        x_flat = x.reshape(-1, 26)
+        x_flat = x.reshape(x.shape[0], -1)
         x_scaled = self.scaler.transform(x_flat)
         x_tensor = torch.tensor(x_scaled, dtype=torch.float32).to(self.device)
 
@@ -86,4 +91,4 @@ class NeuralNetwork:
         output = output.cpu().numpy()
         # 逆标准化
         output_original = self.y_scaler.inverse_transform(output)
-        return output_original
+        return output_original.reshape(-1)
