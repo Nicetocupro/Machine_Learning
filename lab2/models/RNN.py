@@ -14,7 +14,7 @@ class RNN:
         hs, ys = {}, {}
         hs[-1] = h_prev
         for t in range(len(inputs)):
-            x = np.array(inputs[t]).reshape(-1, 1)
+            x = np.array(inputs[t]).reshape(-1, 1)  # Ensure input is a numpy array and reshape
             hs[t] = np.tanh(np.dot(self.Wxh, x) + np.dot(self.Whh, hs[t-1]) + self.bh)
             ys[t] = np.dot(self.Why, hs[t]) + self.by
         return ys, hs
@@ -37,8 +37,8 @@ class RNN:
             dh = np.dot(self.Why.T, dy) + dh_next
             dh_raw = (1 - hs[t] * hs[t]) * dh
             dbh += dh_raw
-            dWxh += np.dot(dh_raw, inputs[t].reshape(1, -1))
-            dWhh += np.dot(dh_raw, hs[t-1].T)
+            dWxh += np.dot(dh_raw, np.array(inputs[t]).reshape(1, -1))  # Ensure input is numpy array
+            dWhh += np.dot(dh_raw, hs[t-1].T) if t > 0 else 0
             dh_next = np.dot(self.Whh.T, dh_raw)
 
         for dparam in [dWxh, dWhh, dWhy, dbh, dby]:
@@ -57,3 +57,12 @@ class RNN:
             self.backward(inputs, hs, outputs, targets, learning_rate)
             if epoch % 10 == 0:
                 print(f'Epoch {epoch}, Loss: {loss}')
+
+    def predict(self, inputs):
+        outputs, _ = self.forward(inputs)
+        predictions = []
+        for t in range(len(outputs)):
+            # Take the output with the highest value to make a classification
+            pred = np.argmax(outputs[t])  # Get the index of the maximum value
+            predictions.append(pred)
+        return np.array(predictions)
