@@ -104,5 +104,9 @@ class SVM:
         K = self.compute_kernel(X, X)
         # 预测：y = sign(Σα * y * K(x, x') + b)
         y_pred = np.sign(np.dot(K, self.alpha * self.y_train) + self.b)
+<<<<<<< HEAD
         return y_pred
 
+=======
+        return y_pred
+>>>>>>> lab2-init
