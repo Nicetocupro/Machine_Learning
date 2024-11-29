@@ -1,5 +1,5 @@
 import math
-from measures import get_distance_measure
+from measures import get_distance_measure      
 
 
 class myAgglomerativeHierarchicalClustering:
