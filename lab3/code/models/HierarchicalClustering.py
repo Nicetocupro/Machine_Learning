@@ -1,6 +1,17 @@
-import math
-from measures import get_distance_measure      
+import math 
+import numpy as np
 
+def get_distance_measure(M):
+    if M == 'euclidean':
+        return euclidean_distance
+    else:
+        raise ValueError("Unsupported distance measure")
+
+def euclidean_distance(cluster1, cluster2):
+    # 计算两个簇之间的欧几里得距离
+    centroid1 = np.mean(cluster1, axis=0)
+    centroid2 = np.mean(cluster2, axis=0)
+    return np.linalg.norm(centroid1 - centroid2) 
 
 class myAgglomerativeHierarchicalClustering:
     def __init__(self, data, K, M):
