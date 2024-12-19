@@ -3,6 +3,10 @@
 .vscode/
 # 所有的idea配置文件
 .idea/
+# 所有history
+.history 
+# 所有pyc文件
+*.pyc
 # lab1的history
 lab1/.history 
 lab1/.lab1
