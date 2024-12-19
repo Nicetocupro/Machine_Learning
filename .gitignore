@@ -8,5 +8,4 @@
 # 所有pyc文件
 *.pyc
 # lab1的history
-lab1/.history 
-lab1/.lab1
+.history
